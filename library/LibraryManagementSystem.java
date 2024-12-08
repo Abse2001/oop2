@@ -29,7 +29,7 @@ public class LibraryManagementSystem {
                     break;
 
                 case "add":
-                    addItem(scanner, command);
+                    addItem(command);
                     break;
 
                 case "remove":
@@ -118,7 +118,7 @@ public class LibraryManagementSystem {
         }
     }
 
-    private void addItem(Scanner scanner, String command) {
+    private void addItem(String command) {
         String[] parts = command.split(" ");
         
         if (parts.length == 6) {
