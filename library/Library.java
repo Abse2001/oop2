@@ -1,120 +1,89 @@
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
 
 public class Library {
-    private List<Book> items = new ArrayList<>();
+    private List<Book> Books;
 
-    // Adds a new item or updates the quantity if the item already exists.
-    public void addItem(String title, String author, String email, int quantity) {
-        if (title.isEmpty() || author.isEmpty() || email.isEmpty() || quantity <= 0) {
-            System.out.println("Invalid input. Ensure all fields are provided correctly.");
-            return;
-        }
+    public Library() {
+        Books = new ArrayList<>();
+    }
 
-        for (Book item : items) {
-            if (item.getTitle().equalsIgnoreCase(title)) {
-                item.increaseQuantity(quantity);
-                System.out.println("Item already exists. Quantity increased.");
+    public void addItem(Book book) {
+        for (Book b : Books) {
+            if (b.getTitle().equalsIgnoreCase(book.getTitle()) && b.getAuthor().equalsIgnoreCase(book.getAuthor()) && b.getEmail().equalsIgnoreCase(book.getEmail()) && b.getCategory().equalsIgnoreCase(book.getCategory())) {
+                b.setQuantity(b.getQuantity() + book.getQuantity());
                 return;
             }
         }
-        items.add(new Book(title, author, email, quantity));
-        System.out.println("New item added.");
+        Books.add(book);
     }
 
-    // Removes an item by title.
-    public void removeItem(String title) {
-        if (title.isEmpty()) {
-            System.out.println("Title cannot be empty. Provide a valid title.");
-            return;
-        }
-
-        Iterator<Book> iterator = items.iterator();
-        while (iterator.hasNext()) {
-            Book item = iterator.next();
-            if (item.getTitle().equalsIgnoreCase(title)) {
-                iterator.remove();
-                System.out.println("Done: Item removed successfully.");
+    public void removeItem(String title,String author) {
+        for (Book b : Books) {
+            if (b.getTitle().equalsIgnoreCase(title) && b.getAuthor().equalsIgnoreCase(author)) {
+                Books.remove(b);
+                System.out.println("Done");
                 return;
             }
         }
-        System.out.println("Not found: Item not found in the list.");
+        System.out.println("Not found");
     }
 
-    // Finds and displays an item by title.
-    public void findItem(String title) {
-        if (title.isEmpty()) {
-            System.out.println("Title cannot be empty. Provide a valid title.");
-            return;
-        }
-
-        for (Book item : items) {
-            if (item.getTitle().equalsIgnoreCase(title)) {
-                System.out.println(item + "   " + item.getQuantity());
-                return;
+    public Book findItem(String title) {
+        for (Book b : Books) {
+            if (b.getTitle().equalsIgnoreCase(title)) {
+                return b;
             }
         }
-        System.out.println("Not found.");
+        System.out.println("Not found");
+        return null;
     }
 
-    // Borrows an item by title.
     public void borrowItem(String title) {
-        if (title.isEmpty()) {
-            System.out.println("Title cannot be empty. Provide a valid title.");
-            return;
-        }
-
-        for (Book item : items) {
-            if (item.getTitle().equalsIgnoreCase(title)) {
-                if (item.getQuantity() > 0) {
-                    item.decreaseQuantity();
-                    System.out.println("Done: Item borrowed successfully.");
-                } else {
-                    System.out.println("No available item!");
-                }
-                return;
+        Book book = findItem(title);
+        if (book != null) {
+            if (book.getQuantity() > 0) {
+                book.setQuantity(book.getQuantity() - 1);
+                System.out.println("Done");
+            } else {
+                System.out.println("No available item");
             }
         }
-        System.out.println("Not found: Item not found in the list.");
     }
 
-    // Returns an item by title.
     public void returnItem(String title) {
-        if (title.isEmpty()) {
-            System.out.println("Title cannot be empty. Provide a valid title.");
-            return;
+        Book book = findItem(title);
+        if (book != null) {
+            book.setQuantity(book.getQuantity() + 1);
+            System.out.println("Done");
         }
+    }
 
-        for (Book item : items) {
-            if (item.getTitle().equalsIgnoreCase(title)) {
-                item.increaseQuantity(1);
-                System.out.println("Done: Item returned successfully.");
-                return;
+    public void listAllItems() {
+        for (Book book : Books) {
+           System.out.println(book.displayBookInfo());
+        }
+    }
+
+    public void listBooks() {
+        for (Book book : Books) {
+            if (book.getQuantity() > 0) {
+                book.displayBookInfo();
             }
         }
-        System.out.println("Not found: Item not found in the list.");
+    }
+    public List<Book> findItemsByTitle(String title) {
+        List<Book> matchingBooks = new ArrayList<>();
+        for (Book b : Books) {
+            if (b.getTitle().equalsIgnoreCase(title)) {
+                matchingBooks.add(b);
+            }
+        }
+        return matchingBooks;
     }
 
-    // Lists all items in the library.
-    public void listAllItems() {
-        if (items.isEmpty()) {
-            System.out.println("The library is empty. No items to display.");
-            return;
-        }
-
-        for (Book item : items) {
-            System.out.println(item + "   " + item.getQuantity());
-        }
+    public void removeItem(Book book) {
+        Books.remove(book);
     }
-
-    // Lists only books in the library.
-    public void listBooks() {
-        boolean found = false;
-        for (Book item : items) {
-            System.out.println(item.getTitle() + "   " + item.getAuthor() + "   " + item.getEmail() + "   " + item.getQuantity());
-            found = true;
-        }
-        if (!found) {
-            System.out.println("No books found.");
-        }
-    }
+    
 }
