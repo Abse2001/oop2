@@ -30,15 +30,17 @@ public class Library {
         System.out.println("Not found");
     }
 
-    public Book findItem(String title) {
+    public boolean findItem(String title) {
         for (Book b : Books) {
-            if (b.getTitle().equalsIgnoreCase(title)) {
-                return b;
+            if (b.getTitle().toLowerCase().contains(title.toLowerCase()) || b.getAuthor().toLowerCase().contains(title.toLowerCase()) || b.getCategory().toLowerCase().contains(title.toLowerCase()) || b.getEmail().toLowerCase().contains(title.toLowerCase())) {
+                System.out.println("Book found: " + b.displayBookInfo());
+                return true;
             }
         }
-        System.out.println("Not found");
-        return null;
+        System.out.println("No book matches the title: " + title);
+        return false;
     }
+    
 
     public void borrowItem(Book book) {
         if (book != null) {

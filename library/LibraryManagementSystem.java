@@ -89,7 +89,7 @@ public class LibraryManagementSystem {
                 System.out.println("Adds a new book or increases quantity if it already exists.");
                 break;
             case "remove":
-                System.out.println("Usage: remove <title>");
+                System.out.println("Usage: remove <title> <author>");
                 System.out.println("Removes a book from the library.");
                 break;
             case "find":
@@ -97,20 +97,16 @@ public class LibraryManagementSystem {
                 System.out.println("Searches for a book by title.");
                 break;
             case "borrow":
-                System.out.println("Usage: borrow <title>");
+                System.out.println("Usage: borrow <title> <author>");
                 System.out.println("Borrows a book and decreases the available quantity by 1.");
                 break;
             case "return":
-                System.out.println("Usage: return <title>");
+                System.out.println("Usage: return <title> <author>");
                 System.out.println("Returns a borrowed book and increases the available quantity by 1.");
                 break;
             case "list all":
                 System.out.println("Usage: list all");
                 System.out.println("Lists all books with their details.");
-                break;
-            case "list book":
-                System.out.println("Usage: list book");
-                System.out.println("Lists all books that have a quantity greater than 0.");
                 break;
             case "exit":
                 System.out.println("Usage: exit");
@@ -183,10 +179,7 @@ public class LibraryManagementSystem {
 
     private void findItem(String command) {
         String title = command.substring(5).trim();
-        Book book = library.findItem(title);
-        if (book != null) {
-            System.out.println(book.getTitle() + " " + book.getQuantity());
-        }
+        library.findItem(title);
     }
 
     private void borrowItem(String command) {
