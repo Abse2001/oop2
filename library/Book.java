@@ -4,6 +4,7 @@ public class Book {
     private String author;
     private String email;
     private int quantity;
+    private int maxQuantity;
 
     public Book(String title, String category, String author, String email, int quantity) {
         this.title = title;
@@ -51,6 +52,12 @@ public class Book {
 
     public void setQuantity(int quantity) {
         this.quantity = quantity;
+    }
+    public int getMaxQuantity() {
+        return maxQuantity;
+    }
+    public void setMaxQuantity(int maxQuantity) {
+        this.maxQuantity = maxQuantity;
     }
 
     public String displayBookInfo() {

@@ -7,14 +7,15 @@ public class Library {
     public Library() {
         Books = new ArrayList<>();
     }
-
     public void addItem(Book book) {
         for (Book b : Books) {
             if (b.getTitle().equalsIgnoreCase(book.getTitle()) && b.getAuthor().equalsIgnoreCase(book.getAuthor()) && b.getEmail().equalsIgnoreCase(book.getEmail()) && b.getCategory().equalsIgnoreCase(book.getCategory())) {
                 b.setQuantity(b.getQuantity() + book.getQuantity());
+                b.setMaxQuantity( b.getMaxQuantity() + book.getQuantity());
                 return;
             }
         }
+        book.setMaxQuantity(book.getQuantity());
         Books.add(book);
     }
 
@@ -39,23 +40,25 @@ public class Library {
         return null;
     }
 
-    public void borrowItem(String title) {
-        Book book = findItem(title);
+    public void borrowItem(Book book) {
         if (book != null) {
             if (book.getQuantity() > 0) {
                 book.setQuantity(book.getQuantity() - 1);
-                System.out.println("Done");
+                System.out.println("Book borrowed: " + book.displayBookInfo());
+
             } else {
                 System.out.println("No available item");
             }
         }
     }
 
-    public void returnItem(String title) {
-        Book book = findItem(title);
-        if (book != null) {
+    public void returnItem(Book book) {
+        if (book.getQuantity() < book.getMaxQuantity()) {
             book.setQuantity(book.getQuantity() + 1);
             System.out.println("Done");
+        }else{
+            System.out.println("All books are in stock");
+            System.out.println("Use add command to add more books");
         }
     }
 

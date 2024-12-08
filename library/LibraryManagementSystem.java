@@ -141,7 +141,7 @@ public class LibraryManagementSystem {
     
             Book book = new Book(title, category, author, email, quantity);
             library.addItem(book);
-            System.out.println("Book added successfully.");
+            System.out.println("Book : " + book.displayBookInfo() + " added successfully.");
         } else {
             System.out.println("Invalid command format! Usage: 'add <title> <category> <author> <email> <quantity>'");
         }
@@ -161,7 +161,8 @@ public class LibraryManagementSystem {
     List<Book> matchingBooks = library.findItemsByTitle(title);
 
     if (matchingBooks.isEmpty()) {
-        System.out.println("No books found with the title: " + title);
+        System.out.println("No books found with the title: " + title + "and author: " + author);
+
         return;
     }
 
@@ -189,13 +190,55 @@ public class LibraryManagementSystem {
     }
 
     private void borrowItem(String command) {
-        String title = command.substring(7).trim();
-        library.borrowItem(title);
+        String[] parts = command.split(" ");
+        if (parts.length < 3) {
+            System.out.println("Invalid command! Usage: borrow <title> <author>");
+            return;
+        }
+    
+        String title = parts[1];
+        String author = parts[2];
+    
+        List<Book> matchingBooks = library.findItemsByTitle(title);
+    
+        if (matchingBooks.isEmpty()) {
+            System.out.println("No books found with the title: " + title + "and author: " + author);
+            return;
+        }
+    
+        for (Book book : matchingBooks) {
+            if (book.getTitle().equalsIgnoreCase(title) && book.getAuthor().equalsIgnoreCase(author)) {
+                library.borrowItem(book);
+                break;
+            }
+        }
+    
     }
 
     private void returnItem(String command) {
-        String title = command.substring(7).trim();
-        library.returnItem(title);
+        String[] parts = command.split(" ");
+        if (parts.length < 3) {
+            System.out.println("Invalid command! Usage: return <title> <author>");
+            return;
+        }
+    
+        String title = parts[1];
+        String author = parts[2];
+    
+        List<Book> matchingBooks = library.findItemsByTitle(title);
+    
+        if (matchingBooks.isEmpty()) {
+            System.out.println("No books found with the title: " + title + "and author: " + author);
+            return;
+        }
+
+        for (Book book : matchingBooks) {
+            if (book.getTitle().equalsIgnoreCase(title) && book.getAuthor().equalsIgnoreCase(author)) {
+                library.returnItem(book);
+                break;
+            }
+        }
+    
     }
 
     public static void main(String[] args) {
