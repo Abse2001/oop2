@@ -31,11 +31,15 @@ public class Library {
     }
 
     public boolean findItem(String title) {
+        boolean found = false;
         for (Book b : Books) {
             if (b.getTitle().toLowerCase().contains(title.toLowerCase()) || b.getAuthor().toLowerCase().contains(title.toLowerCase()) || b.getCategory().toLowerCase().contains(title.toLowerCase()) || b.getEmail().toLowerCase().contains(title.toLowerCase())) {
-                System.out.println("Book found: " + b.displayBookInfo());
-                return true;
+                System.out.println(b.displayBookInfo());
+                found = true;
             }
+        }
+        if (found) {
+            return true;
         }
         System.out.println("No book matches the title: " + title);
         return false;
