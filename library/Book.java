@@ -62,7 +62,7 @@ public class Book {
     }
 
     public String displayBookInfo() {
-        return this.title + " (" + this.category + ") by " + this.author + " (" + this.email + ") - Quantity: " + this.quantity;
+        return "Title: " + this.title + ", Category: [" + this.category + "], By: " + this.author + ", Email: (" + this.email + ") - Quantity: " + this.quantity;
     }
     
 }

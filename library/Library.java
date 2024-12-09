@@ -1,20 +1,21 @@
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 
 public class Library {
-    private List<Book> Books;
+    private ArrayList<Book> Books;
 
     public Library() {
-        Books = new ArrayList<>();
+        Books = new ArrayList<Book>();
     }
     public void addItem(Book book) {
         for (Book b : Books) {
             if (b.getTitle().equalsIgnoreCase(book.getTitle()) && b.getAuthor().equalsIgnoreCase(book.getAuthor()) && b.getEmail().equalsIgnoreCase(book.getEmail()) && b.getCategory().equalsIgnoreCase(book.getCategory())) {
                 b.setQuantity(b.getQuantity() + book.getQuantity());
                 b.setMaxQuantity( b.getMaxQuantity() + book.getQuantity());
+                System.out.println("Book : " + book.getTitle() + " , " + book.getCategory() + "increased max quantity to : " + b.getMaxQuantity());
                 return;
             }
         }
+        System.out.println("Book : " + book.displayBookInfo() + " added successfully.");
         Books.add(book);
     }
 
@@ -46,7 +47,7 @@ public class Library {
     
 
     public void borrowItem(Book book) {
-        if (book != null) {
+      
             if (book.getQuantity() > 0) {
                 book.setQuantity(book.getQuantity() - 1);
                 System.out.println("Book borrowed: " + book.displayBookInfo());
@@ -54,7 +55,7 @@ public class Library {
             } else {
                 System.out.println("No available item");
             }
-        }
+        
     }
 
     public void returnItem(Book book) {
@@ -62,28 +63,24 @@ public class Library {
             book.setQuantity(book.getQuantity() + 1);
             System.out.println("Done");
         }else{
-            System.out.println("All books are in stock");
-            System.out.println("Use add command to add more books");
+            System.out.println("The stock is full");
+            System.out.println("Use add command with the book details to increase the stock.");
         }
     }
 
     public void listAllItems() {
+        if(!Books.isEmpty()){
         for (Book book : Books) {
            System.out.println(book.displayBookInfo());
         }
+    }else{
+        System.out.println("The library is empty");
     }
-
-    public void listBooks() {
-        for (Book book : Books) {
-            if (book.getQuantity() > 0) {
-                book.displayBookInfo();
-            }
-        }
     }
-    public List<Book> findItemsByTitle(String title) {
-        List<Book> matchingBooks = new ArrayList<>();
+    public ArrayList<Book> findItems(String title,String author) {
+        ArrayList<Book> matchingBooks = new ArrayList<>();
         for (Book b : Books) {
-            if (b.getTitle().equalsIgnoreCase(title)) {
+            if (b.getTitle().equalsIgnoreCase(title) && b.getAuthor().equalsIgnoreCase(author)) {
                 matchingBooks.add(b);
             }
         }

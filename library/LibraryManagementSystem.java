@@ -1,5 +1,4 @@
-import java.util.List;
-import java.util.Scanner;
+import java.util.*;
 
 public class LibraryManagementSystem {
     private Library library;
@@ -49,10 +48,10 @@ public class LibraryManagementSystem {
                     break;
 
                 case "list":
-                    if (command.equals("list all")) {
+                    if (command.equals("list all") || command.equals("list book") || command.equals("list books")) {
                         library.listAllItems();
                     } else {
-                        System.out.println("Invalid list command! Use 'list all' or 'list book'.");
+                        System.out.println("Invalid list command! Use 'list all'.");
                     }
                     break;
 
@@ -62,7 +61,7 @@ public class LibraryManagementSystem {
                     return;
 
                 default:
-                    System.out.println("Invalid command! Type 'help' for available commands.");
+                    System.out.println("Invalid command! Type 'help' for available commands or help <command name> for command details.");
                     break;
             }
         }
@@ -71,12 +70,11 @@ public class LibraryManagementSystem {
     private void help() {
         System.out.println("Available commands:");
         System.out.println("add <title> <category> <author> <email> <quantity>");
-        System.out.println("remove <title>");
-        System.out.println("find <title>");
-        System.out.println("borrow <title>");
-        System.out.println("return <title>");
+        System.out.println("remove <title> <author>");
+        System.out.println("find <any field>");
+        System.out.println("borrow <title> <author>");
+        System.out.println("return <title> <author>");
         System.out.println("list all");
-        System.out.println("list book");
         System.out.println("exit");
     }
 
@@ -136,7 +134,6 @@ public class LibraryManagementSystem {
             int quantity = Integer.parseInt(quantityStr);
             Book book = new Book(title, category, author, email, quantity);
             library.addItem(book);
-            System.out.println("Book : " + book.displayBookInfo() + " added successfully.");
         } else {
             System.out.println("Invalid command format! Usage: 'add <title> <category> <author> <email> <quantity>'");
         }
@@ -145,7 +142,7 @@ public class LibraryManagementSystem {
 
     private void removeItem(String command) {
     String[] parts = command.split(" ");
-    if (parts.length < 3) {
+    if (parts.length != 3) {
         System.out.println("Invalid command! Usage: remove <title> <author>");
         return;
     }
@@ -153,7 +150,7 @@ public class LibraryManagementSystem {
     String title = parts[1];
     String author = parts[2];
 
-    List<Book> matchingBooks = library.findItemsByTitle(title);
+    List<Book> matchingBooks = library.findItems(title,author);
 
     if (matchingBooks.isEmpty()) {
         System.out.println("No books found with the title: " + title + "and author: " + author);
@@ -191,7 +188,7 @@ public class LibraryManagementSystem {
         String title = parts[1];
         String author = parts[2];
     
-        List<Book> matchingBooks = library.findItemsByTitle(title);
+        List<Book> matchingBooks = library.findItems(title,author);
     
         if (matchingBooks.isEmpty()) {
             System.out.println("No books found with the title: " + title + "and author: " + author);
@@ -217,7 +214,7 @@ public class LibraryManagementSystem {
         String title = parts[1];
         String author = parts[2];
     
-        List<Book> matchingBooks = library.findItemsByTitle(title);
+        List<Book> matchingBooks = library.findItems(title,author);
     
         if (matchingBooks.isEmpty()) {
             System.out.println("No books found with the title: " + title + "and author: " + author);
