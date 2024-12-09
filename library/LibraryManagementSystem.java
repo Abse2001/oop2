@@ -134,7 +134,6 @@ public class LibraryManagementSystem {
             }
             
             int quantity = Integer.parseInt(quantityStr);
-    
             Book book = new Book(title, category, author, email, quantity);
             library.addItem(book);
             System.out.println("Book : " + book.displayBookInfo() + " added successfully.");

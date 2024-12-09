@@ -15,7 +15,6 @@ public class Library {
                 return;
             }
         }
-        book.setMaxQuantity(book.getQuantity());
         Books.add(book);
     }
 

@@ -12,6 +12,7 @@ public class Book {
         this.author = author;
         this.email = email;
         this.quantity = quantity;
+        this.maxQuantity = quantity;
     }
 
     public String getTitle() {
