@@ -1,26 +1,15 @@
-public class Book {
-    private String title;
+
+
+public class Book extends Item {
     private String category;
     private String author;
     private String email;
-    private int quantity;
-    private int maxQuantity;
 
     public Book(String title, String category, String author, String email, int quantity) {
-        this.title = title;
+        super(title, quantity);
         this.category = category;
         this.author = author;
         this.email = email;
-        this.quantity = quantity;
-        this.maxQuantity = quantity;
-    }
-
-    public String getTitle() {
-        return title;
-    }
-
-    public void setTitle(String title) {
-        this.title = title;
     }
 
     public String getCategory() {
@@ -47,22 +36,14 @@ public class Book {
         this.email = email;
     }
 
-    public int getQuantity() {
-        return quantity;
+    @Override
+    public String toCsvString() {
+        return "BOOK," + title + "," + category + "," + author + "," + email + "," + quantity + "," + maxQuantity;
     }
 
-    public void setQuantity(int quantity) {
-        this.quantity = quantity;
+    @Override
+    public String displayInfo() {
+        return "Title: " + this.title + ", Category: [" + this.category + "], By: " + this.author + 
+               ", Email: (" + this.email + ") - Quantity: " + this.quantity;
     }
-    public int getMaxQuantity() {
-        return maxQuantity;
-    }
-    public void setMaxQuantity(int maxQuantity) {
-        this.maxQuantity = maxQuantity;
-    }
-
-    public String displayBookInfo() {
-        return "Title: " + this.title + ", Category: [" + this.category + "], By: " + this.author + ", Email: (" + this.email + ") - Quantity: " + this.quantity;
-    }
-    
 }

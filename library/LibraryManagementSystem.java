@@ -1,3 +1,5 @@
+
+
 import java.util.*;
 
 public class LibraryManagementSystem {
@@ -22,6 +24,13 @@ public class LibraryManagementSystem {
                 case "help":
                     if (command.equals("help")) {
                         help();
+                    } else if (command.startsWith("help add")) {
+                        System.out.println("\nAdd Book Usage:");
+                        System.out.println("add book <title> <category> <author> <email> <quantity>");
+                        System.out.println("Example: add book JavaProgramming Technical JohnDoe john@email.com 5");
+                        System.out.println("\nAdd CD Usage:");
+                        System.out.println("add cd <title> <company> <duration> <price> <quantity>");
+                        System.out.println("Example: add cd AlbumName MusicCo 45 12.99 3");
                     } else {
                         showHelpForCommand(command);
                     }
@@ -69,11 +78,12 @@ public class LibraryManagementSystem {
 
     private void help() {
         System.out.println("Available commands:");
-        System.out.println("add <title> <category> <author> <email> <quantity>");
-        System.out.println("remove <title> <author>");
-        System.out.println("find <any field>");
-        System.out.println("borrow <title> <author>");
-        System.out.println("return <title> <author>");
+        System.out.println("add book <title> <category> <author> <email> <quantity>");
+        System.out.println("add cd <title> <company> <duration> <price> <quantity>");
+        System.out.println("remove <title>");
+        System.out.println("find <search term>");
+        System.out.println("borrow <title>");
+        System.out.println("return <title>");
         System.out.println("list all");
         System.out.println("exit");
     }
@@ -119,23 +129,75 @@ public class LibraryManagementSystem {
     private void addItem(String command) {
         String[] parts = command.split(" ");
         
-        if (parts.length == 6) {
-            String title = parts[1];
-            String category = parts[2];
-            String author = parts[3];
-            String email = parts[4];
-            String quantityStr = parts[5];
+        if (parts.length < 2) {
+            System.out.println("Invalid command format! Type 'help add' for usage information.");
+            return;
+        }
+
+        String type = parts[1].toLowerCase();
+        
+        if (type.equals("book")) {
+            if (parts.length != 7) {
+                System.out.println("Invalid command format! Usage: 'add book <title> <category> <author> <email> <quantity>'");
+                return;
+            }
+            addBook(parts);
+        } else if (type.equals("cd")) {
+            if (parts.length != 7) {
+                System.out.println("Invalid command format! Usage: 'add cd <title> <company> <duration> <price> <quantity>'");
+                return;
+            }
+            addCD(parts);
+        } else {
+            System.out.println("Invalid item type! Use 'book' or 'cd'");
+        }
+    }
+
+    private void addBook(String[] parts) {
+        try {
+            String title = parts[2];
+            String category = parts[3];
+            String author = parts[4];
+            String email = parts[5];
+            int quantity = Integer.parseInt(parts[6]);
             
-            if (!quantityStr.matches("\\d+")) {
-                System.out.println("Invalid quantity! Please enter a valid integer for the quantity.");
+            if (quantity <= 0) {
+                System.out.println("Quantity must be greater than 0!");
                 return;
             }
             
-            int quantity = Integer.parseInt(quantityStr);
             Book book = new Book(title, category, author, email, quantity);
             library.addItem(book);
-        } else {
-            System.out.println("Invalid command format! Usage: 'add <title> <category> <author> <email> <quantity>'");
+        } catch (NumberFormatException e) {
+            System.out.println("Invalid quantity! Please enter a valid integer for the quantity.");
+        }
+    }
+
+    private void addCD(String[] parts) {
+        try {
+            String title = parts[2];
+            String company = parts[3];
+            int duration = Integer.parseInt(parts[4]);
+            double price = Double.parseDouble(parts[5]);
+            int quantity = Integer.parseInt(parts[6]);
+            
+            if (quantity <= 0) {
+                System.out.println("Quantity must be greater than 0!");
+                return;
+            }
+            if (duration <= 0) {
+                System.out.println("Duration must be greater than 0!");
+                return;
+            }
+            if (price <= 0) {
+                System.out.println("Price must be greater than 0!");
+                return;
+            }
+            
+            CD cd = new CD(title, company, duration, price, quantity);
+            library.addItem(cd);
+        } catch (NumberFormatException e) {
+            System.out.println("Invalid number format! Please check duration, price and quantity values.");
         }
     }
     
@@ -150,32 +212,30 @@ public class LibraryManagementSystem {
     String title = parts[1];
     String author = parts[2];
 
-    List<Book> matchingBooks = library.findItems(title,author);
-
-    if (matchingBooks.isEmpty()) {
-        System.out.println("No books found with the title: " + title + "and author: " + author);
-
+    Item item = library.findItemByTitle(title, author);
+    
+    if (item == null) {
+        System.out.println("No item found with the title: " + title);
         return;
     }
-
-    boolean bookRemoved = false;
-    for (Book book : matchingBooks) {
-        if (book.getTitle().equalsIgnoreCase(title) && book.getAuthor().equalsIgnoreCase(author)) {
-            library.removeItem(book);
-            System.out.println("Book removed: " + book.displayBookInfo());
-            bookRemoved = true;
-            break;
-        }
-    }
-
-    if (!bookRemoved) {
+    
+    if (item instanceof Book && ((Book)item).getAuthor().equalsIgnoreCase(author)) {
+        library.removeItem(title, author, new HashMap<String, String>());
+        System.out.println("Item removed: " + item.displayInfo());
+    } else {
         System.out.println("No book found with the title '" + title + "' and author '" + author + "'.");
     }
 }
 
     private void findItem(String command) {
-        String title = command.substring(5).trim();
-        library.findItem(title);
+        String[] parts = command.split(" ");
+        if (parts.length != 3) {
+            System.out.println("Invalid command! Usage: find <title> <author>");
+            return;
+        }
+        String title = parts[1];
+        String author = parts[2];
+        library.findItem(title, author, new HashMap<String, String>());
     }
 
     private void borrowItem(String command) {
@@ -188,18 +248,17 @@ public class LibraryManagementSystem {
         String title = parts[1];
         String author = parts[2];
     
-        List<Book> matchingBooks = library.findItems(title,author);
-    
-        if (matchingBooks.isEmpty()) {
-            System.out.println("No books found with the title: " + title + "and author: " + author);
+        Item item = library.findItemByTitle(title, author);
+        
+        if (item == null) {
+            System.out.println("No item found with the title: " + title);
             return;
         }
-    
-        for (Book book : matchingBooks) {
-            if (book.getTitle().equalsIgnoreCase(title) && book.getAuthor().equalsIgnoreCase(author)) {
-                library.borrowItem(book);
-                break;
-            }
+        
+        if (item instanceof Book && ((Book)item).getAuthor().equalsIgnoreCase(author)) {
+            library.borrowItem(title, author, new HashMap<String, String>());
+        } else {
+            System.out.println("No book found with the title '" + title + "' and author '" + author + "'.");
         }
     
     }
@@ -214,18 +273,17 @@ public class LibraryManagementSystem {
         String title = parts[1];
         String author = parts[2];
     
-        List<Book> matchingBooks = library.findItems(title,author);
-    
-        if (matchingBooks.isEmpty()) {
-            System.out.println("No books found with the title: " + title + "and author: " + author);
+        Item item = library.findItemByTitle(title, author);
+        
+        if (item == null) {
+            System.out.println("No item found with the title: " + title);
             return;
         }
-
-        for (Book book : matchingBooks) {
-            if (book.getTitle().equalsIgnoreCase(title) && book.getAuthor().equalsIgnoreCase(author)) {
-                library.returnItem(book);
-                break;
-            }
+        
+        if (item instanceof Book && ((Book)item).getAuthor().equalsIgnoreCase(author)) {
+            library.returnItem(title, author, new HashMap<String, String>());
+        } else {
+            System.out.println("No book found with the title '" + title + "' and author '" + author + "'.");
         }
     
     }
