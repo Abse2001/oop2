@@ -43,7 +43,11 @@ public class CD extends Item {
 
     @Override
     public String displayInfo() {
-        return "Title: " + this.title + ", Company: [" + this.company + "], Duration: " + 
-               this.duration + " min, Price: $" + this.price + " - Quantity: " + this.quantity;
+        return String.format("%-30s | %-15s | %3d min | $%8.2f | %d/%d",
+            title,
+            company,
+            duration,
+            price,
+            quantity, maxQuantity);
     }
 }

@@ -61,7 +61,9 @@ public class Library {
                 } else if (item instanceof CD) {
                     CD existingCD = (CD) existingItem;
                     CD newCD = (CD) item;
-                    if (existingCD.getCompany().equalsIgnoreCase(newCD.getCompany())) {
+                    if (existingCD.getCompany().equalsIgnoreCase(newCD.getCompany()) &&
+                        existingCD.getDuration() == newCD.getDuration() &&
+                        existingCD.getPrice() == newCD.getPrice()) {
                         existingItem.setQuantity(existingItem.getQuantity() + item.getQuantity());
                         existingItem.setMaxQuantity(existingItem.getMaxQuantity() + item.getQuantity());
                         System.out.println("CD: " + item.getTitle() + " increased max quantity to: " + existingItem.getMaxQuantity());
@@ -168,6 +170,22 @@ public class Library {
         return "Multiple items still match the criteria. Please provide more specific information.";
     }
 
+    /**
+     * Searches for items in the library based on specified criteria
+     * 
+     * @param title The title to search for (case-insensitive partial match)
+     * @param itemType The type of item ("Book" or "CD")
+     * @param additionalCriteria Map of additional search criteria:
+     *        For Books:
+     *        - "category": matches book category
+     *        - "author": matches book author
+     *        - "email": matches author email
+     *        For CDs:
+     *        - "company": matches CD company
+     *        - "duration": matches CD duration (exact match)
+     *        - "price": matches CD price (exact match)
+     * @return A formatted string containing search results or appropriate message
+     */
     public String findItem(String title, String itemType, Map<String, String> additionalCriteria) {
         if (title == null || title.trim().isEmpty()) {
             return "Error: Title is required for search";
@@ -451,14 +469,117 @@ public class Library {
             System.out.println("The library is empty");
             return;
         }
+
+        // Print headers
+        System.out.println("\nBooks:");
+        System.out.println(String.format("%-30s | %-15s | %-20s | %-25s | Stock", 
+            "Title", "Category", "Author", "Email"));
+        System.out.println("-".repeat(100));
         
-        for (Item item : items) {
-            System.out.println(item.displayInfo());
-        }
+        // Print books
+        items.stream()
+             .filter(item -> item instanceof Book)
+             .forEach(item -> System.out.println(item.displayInfo()));
+        
+        // Print CD header
+        System.out.println("\nCDs:");
+        System.out.println(String.format("%-30s | %-15s | %-8s | %-9s | Stock", 
+            "Title", "Company", "Duration", "Price"));
+        System.out.println("-".repeat(100));
+        
+        // Print CDs
+        items.stream()
+             .filter(item -> item instanceof CD)
+             .forEach(item -> System.out.println(item.displayInfo()));
     }
 
     public ArrayList<Item> getItems() {
-        return items;
+        return new ArrayList<>(items);
+    }
+
+    /**
+     * Searches for and returns a list of items matching the specified criteria
+     * 
+     * @param title The title to search for (case-insensitive partial match)
+     * @param itemType The type of item ("Book" or "CD")
+     * @param additionalCriteria Map of additional search criteria:
+     *        For Books:
+     *        - "category": matches book category
+     *        - "author": matches book author
+     *        - "email": matches author email
+     *        For CDs:
+     *        - "company": matches CD company
+     *        - "duration": matches CD duration (exact match)
+     *        - "price": matches CD price (exact match)
+     * @return List<Item> A list of all items matching the search criteria
+     *         Returns empty list if no matches found
+     */
+    public ArrayList<Item> findItems(String title, String itemType, Map<String, String> additionalCriteria) {
+        ArrayList<Item> foundItems = new ArrayList<>();
+        for (Item item : items) {
+            if (item.getTitle().toLowerCase().contains(title.toLowerCase())) {
+                if ((itemType.equals("Book") && item instanceof Book) || 
+                    (itemType.equals("CD") && item instanceof CD)) {
+                    
+                    boolean meetsAllCriteria = true;
+                    if (additionalCriteria != null && !additionalCriteria.isEmpty()) {
+                        for (Map.Entry<String, String> criterion : additionalCriteria.entrySet()) {
+                            String key = criterion.getKey().toLowerCase();
+                            String value = criterion.getValue().toLowerCase();
+                            
+                            if (value != null && !value.isEmpty()) {
+                                if (item instanceof Book) {
+                                    Book book = (Book) item;
+                                    switch (key) {
+                                        case "author":
+                                            if (!book.getAuthor().toLowerCase().contains(value)) 
+                                                meetsAllCriteria = false;
+                                            break;
+                                        case "category":
+                                            if (!book.getCategory().toLowerCase().contains(value)) 
+                                                meetsAllCriteria = false;
+                                            break;
+                                        case "email":
+                                            if (!book.getEmail().toLowerCase().contains(value)) 
+                                                meetsAllCriteria = false;
+                                            break;
+                                    }
+                                } else if (item instanceof CD) {
+                                    CD cd = (CD) item;
+                                    switch (key) {
+                                        case "company":
+                                            if (!cd.getCompany().toLowerCase().contains(value)) 
+                                                meetsAllCriteria = false;
+                                            break;
+                                        case "duration":
+                                            try {
+                                                if (cd.getDuration() != Integer.parseInt(value)) 
+                                                    meetsAllCriteria = false;
+                                            } catch (NumberFormatException e) {
+                                                meetsAllCriteria = false;
+                                            }
+                                            break;
+                                        case "price":
+                                            try {
+                                                if (cd.getPrice() != Double.parseDouble(value)) 
+                                                    meetsAllCriteria = false;
+                                            } catch (NumberFormatException e) {
+                                                meetsAllCriteria = false;
+                                            }
+                                            break;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    
+                    if (meetsAllCriteria) {
+                        foundItems.add(item);
+                    }
+                }
+            }
+        }
+        return foundItems;
     }
 
     public Item findItemByTitle(String title, String itemType) {

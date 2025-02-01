@@ -43,7 +43,13 @@ public class Book extends Item {
 
     @Override
     public String displayInfo() {
-        return "Title: " + this.title + ", Category: [" + this.category + "], By: " + this.author + 
-               ", Email: (" + this.email + ") - Quantity: " + this.quantity;
+        return String.format("%-30s | %-15s | %-20s | %-25s | %d/%d", 
+            title,
+            category,
+            author,
+            email,
+            quantity,
+            maxQuantity);
+        
     }
 }

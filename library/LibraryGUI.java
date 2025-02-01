@@ -1,12 +1,17 @@
 import javax.swing.*;
+import javax.swing.table.*;
 import java.awt.*;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 public class LibraryGUI extends JFrame {
     private Library library;
     private JTextArea displayArea;
+    private JTable resultTable;
+    private JScrollPane tableScrollPane;
     private JTextField titleField, authorField, categoryField, emailField, quantityField;
-    private JTextField companyField, durationField, priceField;
     private JComboBox<String> itemTypeCombo;
 
     public LibraryGUI() {
@@ -20,10 +25,14 @@ public class LibraryGUI extends JFrame {
         JPanel inputPanel = createInputPanel();
         JPanel buttonPanel = createButtonPanel();
         createDisplayArea();
+        createResultTable();
 
         // Add panels to frame
         add(inputPanel, BorderLayout.NORTH);
-        add(new JScrollPane(displayArea), BorderLayout.CENTER);
+        JPanel displayPanel = new JPanel(new BorderLayout());
+        displayPanel.add(new JScrollPane(displayArea), BorderLayout.NORTH);
+        displayPanel.add(tableScrollPane, BorderLayout.CENTER);
+        add(displayPanel, BorderLayout.CENTER);
         add(buttonPanel, BorderLayout.SOUTH);
 
         setLocationRelativeTo(null);
@@ -42,10 +51,6 @@ public class LibraryGUI extends JFrame {
         categoryField = new JTextField(20);
         emailField = new JTextField(20);
         quantityField = new JTextField(5);
-        companyField = new JTextField(20);
-        durationField = new JTextField(5);
-        priceField = new JTextField(10);
-
         // Add components with labels
         JLabel itemTypeLabel = new JLabel("Item Type:");
         addComponent(panel, itemTypeLabel, itemTypeCombo, gbc, 0);
@@ -113,10 +118,74 @@ public class LibraryGUI extends JFrame {
     }
 
     private void createDisplayArea() {
-        displayArea = new JTextArea();
+        displayArea = new JTextArea(5, 50);  // Reduced height since we have table below
         displayArea.setEditable(false);
         displayArea.setFont(new Font("Monospaced", Font.PLAIN, 12));
+        displayArea.setBorder(BorderFactory.createCompoundBorder(
+            BorderFactory.createLineBorder(Color.GRAY),
+            BorderFactory.createEmptyBorder(5, 5, 5, 5)
+        ));
+        displayArea.setLineWrap(true);
+        displayArea.setWrapStyleWord(true);
+        displayArea.setText("Welcome to Library Management System!\nUse the controls above to manage items.");
     }
+
+    private void appendItemDetails(Item item) {
+        DefaultTableModel model;
+        if (item instanceof Book) {
+            // Create table model for books if it doesn't exist
+            if (!(resultTable.getModel() instanceof DefaultTableModel) || 
+                resultTable.getModel().getColumnCount() != 6) {
+                model = new DefaultTableModel(new String[]{
+                    "Type", "Title", "Category", "Author", "Email", "Stock"
+                }, 0);
+                resultTable.setModel(model);
+            } else {
+                model = (DefaultTableModel) resultTable.getModel();
+            }
+            
+            Book book = (Book) item;
+            model.addRow(new Object[]{
+                "Book",
+                book.getTitle(),
+                book.getCategory(),
+                book.getAuthor(),
+                book.getEmail(),
+                book.getQuantity() + "/" + book.getMaxQuantity()
+            });
+        } else if (item instanceof CD) {
+            // Create table model for CDs if it doesn't exist
+            if (!(resultTable.getModel() instanceof DefaultTableModel) || 
+                resultTable.getModel().getColumnCount() != 6) {
+                model = new DefaultTableModel(new String[]{
+                    "Type", "Title", "Company", "Duration", "Price", "Stock"
+                }, 0);
+                resultTable.setModel(model);
+            } else {
+                model = (DefaultTableModel) resultTable.getModel();
+            }
+            
+            CD cd = (CD) item;
+            model.addRow(new Object[]{
+                "CD",
+                cd.getTitle(),
+                cd.getCompany(),
+                cd.getDuration() + " min",
+                String.format("$%.2f", cd.getPrice()),
+                cd.getQuantity() + "/" + cd.getMaxQuantity()
+            });
+        }
+    }
+
+    private void createResultTable() {
+        String[] columnNames = {"Type", "Title", "Category/Company", "Author/Duration", "Email/Price", "Quantity", "Max Quantity"};
+        resultTable = new JTable(new DefaultTableModel(columnNames, 0));
+        resultTable.setFillsViewportHeight(true);
+        resultTable.setAutoResizeMode(JTable.AUTO_RESIZE_ALL_COLUMNS);
+        tableScrollPane = new JScrollPane(resultTable);
+        tableScrollPane.setPreferredSize(new Dimension(750, 300));
+    }
+
 
     private void handleButtonClick(String command) {
         try {
@@ -147,26 +216,182 @@ public class LibraryGUI extends JFrame {
 
     private void addItem() {
         try {
-            String title = titleField.getText();
-            int quantity = Integer.parseInt(quantityField.getText());
+            // Validate title
+            String title = titleField.getText().trim();
+            if (title.isEmpty()) {
+                JOptionPane.showMessageDialog(this, 
+                    "Title field cannot be empty\n" +
+                    "Required: Text (e.g., 'Java Programming')", 
+                    "Title Validation Error", JOptionPane.ERROR_MESSAGE);
+                titleField.requestFocus();
+                return;
+            }
+
+            // Validate quantity
+            String quantityStr = quantityField.getText().trim();
+            if (quantityStr.isEmpty()) {
+                JOptionPane.showMessageDialog(this,
+                    "Quantity field cannot be empty\n" +
+                    "Required: Positive whole number (e.g., '5')",
+                    "Quantity Validation Error", JOptionPane.ERROR_MESSAGE);
+                quantityField.requestFocus();
+                return;
+            }
+
+            int quantity;
+            try {
+                quantity = Integer.parseInt(quantityStr);
+                if (quantity <= 0) {
+                    JOptionPane.showMessageDialog(this,
+                        "Invalid quantity value\n" +
+                        "Required: Number greater than 0\n" +
+                        "Current value: " + quantityStr,
+                        "Quantity Validation Error", JOptionPane.ERROR_MESSAGE);
+                    quantityField.requestFocus();
+                    return;
+                }
+            } catch (NumberFormatException e) {
+                JOptionPane.showMessageDialog(this,
+                    "Invalid quantity format\n" +
+                    "Required: Whole number (e.g., '5')\n" +
+                    "Current value: " + quantityStr,
+                    "Quantity Validation Error", JOptionPane.ERROR_MESSAGE);
+                quantityField.requestFocus();
+                return;
+            }
 
             if (itemTypeCombo.getSelectedItem().equals("Book")) {
-                String category = categoryField.getText();
-                String author = authorField.getText();
-                String email = emailField.getText();
+                String category = categoryField.getText().trim();
+                String author = authorField.getText().trim();
+                String email = emailField.getText().trim();
+
+                // Validate book-specific fields
+                if (category.isEmpty()) {
+                    JOptionPane.showMessageDialog(this,
+                        "Category field cannot be empty\n" +
+                        "Required: Text (e.g., 'Computer Science')",
+                        "Category Validation Error", JOptionPane.ERROR_MESSAGE);
+                    categoryField.requestFocus();
+                    return;
+                }
+
+                if (author.isEmpty()) {
+                    JOptionPane.showMessageDialog(this,
+                        "Author field cannot be empty\n" +
+                        "Required: Text (e.g., 'John Smith')",
+                        "Author Validation Error", JOptionPane.ERROR_MESSAGE);
+                    authorField.requestFocus();
+                    return;
+                }
+
+                if (email.isEmpty()) {
+                    JOptionPane.showMessageDialog(this,
+                        "Email field cannot be empty\n" +
+                        "Required: Valid email address (e.g., 'author@example.com')",
+                        "Email Validation Error", JOptionPane.ERROR_MESSAGE);
+                    emailField.requestFocus();
+                    return;
+                }
+
+                if (!email.contains("@") || !email.contains(".") || email.indexOf("@") > email.lastIndexOf(".")) {
+                    JOptionPane.showMessageDialog(this,
+                        "Invalid email address format\n" +
+                        "Required: Valid email (e.g., 'author@example.com')\n" +
+                        "Current value: " + email,
+                        "Email Validation Error", JOptionPane.ERROR_MESSAGE);
+                    emailField.requestFocus();
+                    return;
+                }
+
                 Book book = new Book(title, category, author, email, quantity);
                 library.addItem(book);
             } else {
-                String company = categoryField.getText();
-                int duration = Integer.parseInt(authorField.getText());
-                double price = Double.parseDouble(emailField.getText());
+                String company = categoryField.getText().trim();
+                String durationStr = authorField.getText().trim();
+                String priceStr = emailField.getText().trim();
+
+                // Validate CD-specific fields
+                if (company.isEmpty()) {
+                    JOptionPane.showMessageDialog(this,
+                        "Company field cannot be empty\n" +
+                        "Required: Text (e.g., 'Sony Music')",
+                        "Company Validation Error", JOptionPane.ERROR_MESSAGE);
+                    categoryField.requestFocus();
+                    return;
+                }
+
+                if (durationStr.isEmpty()) {
+                    JOptionPane.showMessageDialog(this,
+                        "Duration field cannot be empty\n" +
+                        "Required: Positive whole number in minutes (e.g., '45')",
+                        "Duration Validation Error", JOptionPane.ERROR_MESSAGE);
+                    authorField.requestFocus();
+                    return;
+                }
+
+                int duration;
+                try {
+                    duration = Integer.parseInt(durationStr);
+                    if (duration <= 0) {
+                        JOptionPane.showMessageDialog(this,
+                            "Invalid duration value\n" +
+                            "Required: Number greater than 0\n" +
+                            "Current value: " + durationStr + " minutes",
+                            "Duration Validation Error", JOptionPane.ERROR_MESSAGE);
+                        authorField.requestFocus();
+                        return;
+                    }
+                } catch (NumberFormatException e) {
+                    JOptionPane.showMessageDialog(this,
+                        "Invalid duration format\n" +
+                        "Required: Whole number in minutes (e.g., '45')\n" +
+                        "Current value: " + durationStr,
+                        "Duration Validation Error", JOptionPane.ERROR_MESSAGE);
+                    authorField.requestFocus();
+                    return;
+                }
+
+                if (priceStr.isEmpty()) {
+                    JOptionPane.showMessageDialog(this,
+                        "Price field cannot be empty\n" +
+                        "Required: Positive number with optional decimals (e.g., '12.99')",
+                        "Price Validation Error", JOptionPane.ERROR_MESSAGE);
+                    emailField.requestFocus();
+                    return;
+                }
+
+                double price;
+                try {
+                    price = Double.parseDouble(priceStr);
+                    if (price <= 0) {
+                        JOptionPane.showMessageDialog(this,
+                            "Invalid price value\n" +
+                            "Required: Number greater than 0\n" +
+                            "Current value: $" + priceStr,
+                            "Price Validation Error", JOptionPane.ERROR_MESSAGE);
+                        emailField.requestFocus();
+                        return;
+                    }
+                } catch (NumberFormatException e) {
+                    JOptionPane.showMessageDialog(this,
+                        "Invalid price format\n" +
+                        "Required: Number with optional decimals (e.g., '12.99')\n" +
+                        "Current value: " + priceStr,
+                        "Price Validation Error", JOptionPane.ERROR_MESSAGE);
+                    emailField.requestFocus();
+                    return;
+                }
+
                 CD cd = new CD(title, company, duration, price, quantity);
                 library.addItem(cd);
+                displayArea.setText("");
+                appendItemDetails(cd);
             }
-            displayArea.append("Item added successfully\n");
+            
             clearFields();
-        } catch (NumberFormatException e) {
-            JOptionPane.showMessageDialog(this, "Please enter valid numbers", "Error", JOptionPane.ERROR_MESSAGE);
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(this, "An unexpected error occurred: " + e.getMessage(), 
+                                        "Error", JOptionPane.ERROR_MESSAGE);
         }
     }
 
@@ -208,7 +433,6 @@ public class LibraryGUI extends JFrame {
         String title = titleField.getText();
         String itemType = (String) itemTypeCombo.getSelectedItem();
         
-        // Create map for additional search criteria
         Map<String, String> additionalCriteria = new HashMap<>();
         
         if (itemType.equals("Book")) {
@@ -221,7 +445,7 @@ public class LibraryGUI extends JFrame {
             if (!emailField.getText().trim().isEmpty()) {
                 additionalCriteria.put("email", emailField.getText().trim());
             }
-        } else { // CD
+        } else {
             if (!categoryField.getText().trim().isEmpty()) {
                 additionalCriteria.put("company", categoryField.getText().trim());
             }
@@ -233,9 +457,38 @@ public class LibraryGUI extends JFrame {
             }
         }
         
-        displayArea.setText(""); // Clear previous content
-        String results = library.findItem(title, itemType, additionalCriteria);
-        displayArea.append(results);
+        ArrayList<Item> foundItems = library.findItems(title, itemType, additionalCriteria);
+        
+        // Clear previous content
+        DefaultTableModel model = new DefaultTableModel();
+        resultTable.setModel(model);
+        
+        if (foundItems.isEmpty()) {
+            JOptionPane.showMessageDialog(this, "No items found matching the search criteria", 
+                                        "Search Result", JOptionPane.INFORMATION_MESSAGE);
+        } else {
+            // Set appropriate columns based on item type
+            if (itemType.equals("Book")) {
+                model = new DefaultTableModel(new String[]{
+                    "Type", "Title", "Category", "Author", "Email", "Stock"
+                }, 0);
+            } else {
+                model = new DefaultTableModel(new String[]{
+                    "Type", "Title", "Company", "Duration", "Price", "Stock"
+                }, 0);
+            }
+            resultTable.setModel(model);
+            
+            for (Item item : foundItems) {
+                appendItemDetails(item);
+            }
+            
+            // Adjust column widths
+            for (int i = 0; i < resultTable.getColumnCount(); i++) {
+                TableColumn column = resultTable.getColumnModel().getColumn(i);
+                column.setPreferredWidth(100);
+            }
+        }
     }
 
     private void borrowItem() {
@@ -307,12 +560,54 @@ public class LibraryGUI extends JFrame {
     }
 
     private void listAll() {
-        displayArea.setText(""); // Clear previous content
-        for (Item item : library.getItems()) {
-            displayArea.append(item.displayInfo() + "\n");
+        ArrayList<Item> items = library.getItems();
+        
+        if (items.isEmpty()) {
+            JOptionPane.showMessageDialog(this, "The library is empty", "Info", JOptionPane.INFORMATION_MESSAGE);
+            return;
         }
-        if (library.getItems().isEmpty()) {
-            displayArea.append("The library is empty\n");
+
+        // Separate books and CDs
+        ArrayList<Item> books = items.stream()
+            .filter(item -> item instanceof Book)
+            .collect(Collectors.toCollection(ArrayList::new));
+            
+        ArrayList<Item> cds = items.stream()
+            .filter(item -> item instanceof CD)
+            .collect(Collectors.toCollection(ArrayList::new));
+
+        // Clear previous content
+        DefaultTableModel model = new DefaultTableModel();
+        resultTable.setModel(model);
+
+        if (!books.isEmpty()) {
+            model = new DefaultTableModel(new String[]{
+                "Type", "Title", "Category", "Author", "Email", "Stock"
+            }, 0);
+            resultTable.setModel(model);
+            
+            for (Item item : books) {
+                appendItemDetails(item);
+            }
+        }
+
+        if (!cds.isEmpty()) {
+            if (books.isEmpty()) {
+                model = new DefaultTableModel(new String[]{
+                    "Type", "Title", "Company", "Duration", "Price", "Stock"
+                }, 0);
+                resultTable.setModel(model);
+            }
+            
+            for (Item item : cds) {
+                appendItemDetails(item);
+            }
+        }
+
+        // Adjust column widths
+        for (int i = 0; i < resultTable.getColumnCount(); i++) {
+            TableColumn column = resultTable.getColumnModel().getColumn(i);
+            column.setPreferredWidth(100);
         }
     }
 
