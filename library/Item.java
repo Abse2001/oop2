@@ -1,6 +1,6 @@
 
 
-public abstract class Item {
+public class Item {
     protected String title;
     protected int quantity;
     protected int maxQuantity;
@@ -35,6 +35,11 @@ public abstract class Item {
         this.maxQuantity = maxQuantity;
     }
 
-    public abstract String toCsvString();
-    public abstract String displayInfo();
+    public String toCsvString() {
+        return "ITEM," + title + "," + quantity + "," + maxQuantity;
+    }
+    
+    public String displayInfo() {
+        return "Title: " + title + "\nQuantity: " + quantity + "/" + maxQuantity;
+    }
 }

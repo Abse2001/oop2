@@ -1,11 +1,9 @@
-
-
 import java.util.*;
 import java.io.*;
 
 public class Library {
     private ArrayList<Item> items;
-    private static final String DATA_FILE = "library_data.txt";
+    private  String DATA_FILE = "library_data.txt";
 
     public Library() {
         items = new ArrayList<Item>();
@@ -36,7 +34,11 @@ public class Library {
     public void saveToFile() {
         try (PrintWriter writer = new PrintWriter(new FileWriter(DATA_FILE))) {
             for (Item item : items) {
-                writer.println(item.toCsvString());
+                if (item instanceof Book book) {
+                    writer.println(book.toCsvString());
+                } else if (item instanceof CD cd) {
+                    writer.println(cd.toCsvString()); 
+                }
             }
         } catch (IOException e) {
             System.out.println("Error saving library data: " + e.getMessage());
@@ -78,68 +80,45 @@ public class Library {
         saveToFile();
     }
 
-    public String removeItem(String title, String itemType, Map<String, String> additionalCriteria) {
+    public String removeItem(String title, String itemType, String author, String category, String email, String company, String duration, String price) {
         if (title == null || title.trim().isEmpty()) {
             return "Error: Title is required for removal";
         }
 
-        List<Item> matchingItems = new ArrayList<>();
-        Iterator<Item> iterator = items.iterator();
+        ArrayList<Item> matchingItems = new ArrayList<>();
         
-        while (iterator.hasNext()) {
-            Item item = iterator.next();
+        for (Item item : items) {
             if (item.getTitle().equalsIgnoreCase(title)) {
                 if ((itemType.equals("Book") && item instanceof Book) || 
                     (itemType.equals("CD") && item instanceof CD)) {
                     
                     boolean meetsAllCriteria = true;
-                    if (additionalCriteria != null && !additionalCriteria.isEmpty()) {
-                        for (Map.Entry<String, String> criterion : additionalCriteria.entrySet()) {
-                            String key = criterion.getKey().toLowerCase();
-                            String value = criterion.getValue().toLowerCase();
-                            
-                            if (value != null && !value.isEmpty()) {
-                                if (item instanceof Book) {
-                                    Book book = (Book) item;
-                                    switch (key) {
-                                        case "author":
-                                            if (!book.getAuthor().toLowerCase().contains(value)) 
-                                                meetsAllCriteria = false;
-                                            break;
-                                        case "category":
-                                            if (!book.getCategory().toLowerCase().contains(value)) 
-                                                meetsAllCriteria = false;
-                                            break;
-                                        case "email":
-                                            if (!book.getEmail().toLowerCase().contains(value)) 
-                                                meetsAllCriteria = false;
-                                            break;
-                                    }
-                                } else if (item instanceof CD) {
-                                    CD cd = (CD) item;
-                                    switch (key) {
-                                        case "company":
-                                            if (!cd.getCompany().toLowerCase().contains(value)) 
-                                                meetsAllCriteria = false;
-                                            break;
-                                        case "duration":
-                                            try {
-                                                if (cd.getDuration() != Integer.parseInt(value)) 
-                                                    meetsAllCriteria = false;
-                                            } catch (NumberFormatException e) {
-                                                meetsAllCriteria = false;
-                                            }
-                                            break;
-                                        case "price":
-                                            try {
-                                                if (cd.getPrice() != Double.parseDouble(value)) 
-                                                    meetsAllCriteria = false;
-                                            } catch (NumberFormatException e) {
-                                                meetsAllCriteria = false;
-                                            }
-                                            break;
-                                    }
-                                }
+                    if (item instanceof Book) {
+                        Book book = (Book) item;
+                        if (author != null && !author.isEmpty() && !book.getAuthor().equalsIgnoreCase(author)) 
+                            meetsAllCriteria = false;
+                        if (category != null && !category.isEmpty() && !book.getCategory().equalsIgnoreCase(category)) 
+                            meetsAllCriteria = false;
+                        if (email != null && !email.isEmpty() && !book.getEmail().equalsIgnoreCase(email)) 
+                            meetsAllCriteria = false;
+                    } else if (item instanceof CD) {
+                        CD cd = (CD) item;
+                        if (company != null && !company.isEmpty() && !cd.getCompany().equalsIgnoreCase(company)) 
+                            meetsAllCriteria = false;
+                        if (duration != null && !duration.isEmpty()) {
+                            try {
+                                if (cd.getDuration() != Integer.parseInt(duration)) 
+                                    meetsAllCriteria = false;
+                            } catch (NumberFormatException e) {
+                                meetsAllCriteria = false;
+                            }
+                        }
+                        if (price != null && !price.isEmpty()) {
+                            try {
+                                if (cd.getPrice() != Double.parseDouble(price)) 
+                                    meetsAllCriteria = false;
+                            } catch (NumberFormatException e) {
+                                meetsAllCriteria = false;
                             }
                         }
                     }
@@ -153,7 +132,7 @@ public class Library {
 
         if (matchingItems.isEmpty()) {
             return "No items found matching the removal criteria";
-        } else if (matchingItems.size() > 1 && (additionalCriteria == null || additionalCriteria.isEmpty())) {
+        } else if (matchingItems.size() > 1 && (author == null && category == null && email == null && company == null && duration == null && price == null)) {
             StringBuilder result = new StringBuilder("Multiple matching items found:\n");
             for (Item item : matchingItems) {
                 result.append(item.displayInfo()).append("\n");
@@ -186,7 +165,7 @@ public class Library {
      *        - "price": matches CD price (exact match)
      * @return A formatted string containing search results or appropriate message
      */
-    public String findItem(String title, String itemType, Map<String, String> additionalCriteria) {
+    public String findItem(String title, String itemType, String author, String category, String email, String company, String duration, String price) {
         if (title == null || title.trim().isEmpty()) {
             return "Error: Title is required for search";
         }
@@ -204,53 +183,32 @@ public class Library {
                 if (matches) {
                     boolean meetsAllCriteria = true;
                     
-                    if (additionalCriteria != null && !additionalCriteria.isEmpty()) {
-                        for (Map.Entry<String, String> criterion : additionalCriteria.entrySet()) {
-                            String key = criterion.getKey().toLowerCase();
-                            String value = criterion.getValue().toLowerCase();
-                            
-                            if (value != null && !value.isEmpty()) {
-                                if (item instanceof Book) {
-                                    Book book = (Book) item;
-                                    switch (key) {
-                                        case "author":
-                                            if (!book.getAuthor().toLowerCase().contains(value)) 
-                                                meetsAllCriteria = false;
-                                            break;
-                                        case "category":
-                                            if (!book.getCategory().toLowerCase().contains(value)) 
-                                                meetsAllCriteria = false;
-                                            break;
-                                        case "email":
-                                            if (!book.getEmail().toLowerCase().contains(value)) 
-                                                meetsAllCriteria = false;
-                                            break;
-                                    }
-                                } else if (item instanceof CD) {
-                                    CD cd = (CD) item;
-                                    switch (key) {
-                                        case "company":
-                                            if (!cd.getCompany().toLowerCase().contains(value)) 
-                                                meetsAllCriteria = false;
-                                            break;
-                                        case "duration":
-                                            try {
-                                                if (cd.getDuration() != Integer.parseInt(value)) 
-                                                    meetsAllCriteria = false;
-                                            } catch (NumberFormatException e) {
-                                                meetsAllCriteria = false;
-                                            }
-                                            break;
-                                        case "price":
-                                            try {
-                                                if (cd.getPrice() != Double.parseDouble(value)) 
-                                                    meetsAllCriteria = false;
-                                            } catch (NumberFormatException e) {
-                                                meetsAllCriteria = false;
-                                            }
-                                            break;
-                                    }
-                                }
+                    if (item instanceof Book) {
+                        Book book = (Book) item;
+                        if (author != null && !author.isEmpty() && !book.getAuthor().equalsIgnoreCase(author)) 
+                            meetsAllCriteria = false;
+                        if (category != null && !category.isEmpty() && !book.getCategory().equalsIgnoreCase(category)) 
+                            meetsAllCriteria = false;
+                        if (email != null && !email.isEmpty() && !book.getEmail().equalsIgnoreCase(email)) 
+                            meetsAllCriteria = false;
+                    } else if (item instanceof CD) {
+                        CD cd = (CD) item;
+                        if (company != null && !company.isEmpty() && !cd.getCompany().equalsIgnoreCase(company)) 
+                            meetsAllCriteria = false;
+                        if (duration != null && !duration.isEmpty()) {
+                            try {
+                                if (cd.getDuration() != Integer.parseInt(duration)) 
+                                    meetsAllCriteria = false;
+                            } catch (NumberFormatException e) {
+                                meetsAllCriteria = false;
+                            }
+                        }
+                        if (price != null && !price.isEmpty()) {
+                            try {
+                                if (cd.getPrice() != Double.parseDouble(price)) 
+                                    meetsAllCriteria = false;
+                            } catch (NumberFormatException e) {
+                                meetsAllCriteria = false;
                             }
                         }
                     }
@@ -274,65 +232,44 @@ public class Library {
         return results.toString();
     }
 
-    public String borrowItem(String title, String itemType, Map<String, String> additionalCriteria) {
+    public String borrowItem(String title, String itemType, String author, String category, String email, String company, String duration, String price) {
         if (title == null || title.trim().isEmpty()) {
             return "Error: Title is required for borrowing";
         }
 
-        List<Item> matchingItems = new ArrayList<>();
+        ArrayList<Item> matchingItems = new ArrayList<>();
         for (Item item : items) {
             if (item.getTitle().equalsIgnoreCase(title)) {
                 if ((itemType.equals("Book") && item instanceof Book) || 
                     (itemType.equals("CD") && item instanceof CD)) {
                     
                     boolean meetsAllCriteria = true;
-                    if (additionalCriteria != null && !additionalCriteria.isEmpty()) {
-                        for (Map.Entry<String, String> criterion : additionalCriteria.entrySet()) {
-                            String key = criterion.getKey().toLowerCase();
-                            String value = criterion.getValue().toLowerCase();
-                            
-                            if (value != null && !value.isEmpty()) {
-                                if (item instanceof Book) {
-                                    Book book = (Book) item;
-                                    switch (key) {
-                                        case "author":
-                                            if (!book.getAuthor().toLowerCase().contains(value)) 
-                                                meetsAllCriteria = false;
-                                            break;
-                                        case "category":
-                                            if (!book.getCategory().toLowerCase().contains(value)) 
-                                                meetsAllCriteria = false;
-                                            break;
-                                        case "email":
-                                            if (!book.getEmail().toLowerCase().contains(value)) 
-                                                meetsAllCriteria = false;
-                                            break;
-                                    }
-                                } else if (item instanceof CD) {
-                                    CD cd = (CD) item;
-                                    switch (key) {
-                                        case "company":
-                                            if (!cd.getCompany().toLowerCase().contains(value)) 
-                                                meetsAllCriteria = false;
-                                            break;
-                                        case "duration":
-                                            try {
-                                                if (cd.getDuration() != Integer.parseInt(value)) 
-                                                    meetsAllCriteria = false;
-                                            } catch (NumberFormatException e) {
-                                                meetsAllCriteria = false;
-                                            }
-                                            break;
-                                        case "price":
-                                            try {
-                                                if (cd.getPrice() != Double.parseDouble(value)) 
-                                                    meetsAllCriteria = false;
-                                            } catch (NumberFormatException e) {
-                                                meetsAllCriteria = false;
-                                            }
-                                            break;
-                                    }
-                                }
+                    if (item instanceof Book) {
+                        Book book = (Book) item;
+                        if (author != null && !author.isEmpty() && !book.getAuthor().equalsIgnoreCase(author)) 
+                            meetsAllCriteria = false;
+                        if (category != null && !category.isEmpty() && !book.getCategory().equalsIgnoreCase(category)) 
+                            meetsAllCriteria = false;
+                        if (email != null && !email.isEmpty() && !book.getEmail().equalsIgnoreCase(email)) 
+                            meetsAllCriteria = false;
+                    } else if (item instanceof CD) {
+                        CD cd = (CD) item;
+                        if (company != null && !company.isEmpty() && !cd.getCompany().equalsIgnoreCase(company)) 
+                            meetsAllCriteria = false;
+                        if (duration != null && !duration.isEmpty()) {
+                            try {
+                                if (cd.getDuration() != Integer.parseInt(duration)) 
+                                    meetsAllCriteria = false;
+                            } catch (NumberFormatException e) {
+                                meetsAllCriteria = false;
+                            }
+                        }
+                        if (price != null && !price.isEmpty()) {
+                            try {
+                                if (cd.getPrice() != Double.parseDouble(price)) 
+                                    meetsAllCriteria = false;
+                            } catch (NumberFormatException e) {
+                                meetsAllCriteria = false;
                             }
                         }
                     }
@@ -346,7 +283,7 @@ public class Library {
 
         if (matchingItems.isEmpty()) {
             return "No items found matching the borrowing criteria";
-        } else if (matchingItems.size() > 1 && (additionalCriteria == null || additionalCriteria.isEmpty())) {
+        } else if (matchingItems.size() > 1 && (author == null && category == null && email == null && company == null && duration == null && price == null)) {
             StringBuilder result = new StringBuilder("Multiple matching items found:\n");
             for (Item item : matchingItems) {
                 result.append(item.displayInfo()).append("\n");
@@ -368,7 +305,7 @@ public class Library {
         return "Multiple items still match the criteria. Please provide more specific information.";
     }
 
-    public String returnItem(String title, String itemType, Map<String, String> additionalCriteria) {
+    public String returnItem(String title, String itemType, String author, String category, String email, String company, String duration, String price) {
         if (title == null || title.trim().isEmpty()) {
             return "Error: Title is required for returning";
         }
@@ -380,53 +317,32 @@ public class Library {
                     (itemType.equals("CD") && item instanceof CD)) {
                     
                     boolean meetsAllCriteria = true;
-                    if (additionalCriteria != null && !additionalCriteria.isEmpty()) {
-                        for (Map.Entry<String, String> criterion : additionalCriteria.entrySet()) {
-                            String key = criterion.getKey().toLowerCase();
-                            String value = criterion.getValue().toLowerCase();
-                            
-                            if (value != null && !value.isEmpty()) {
-                                if (item instanceof Book) {
-                                    Book book = (Book) item;
-                                    switch (key) {
-                                        case "author":
-                                            if (!book.getAuthor().toLowerCase().contains(value)) 
-                                                meetsAllCriteria = false;
-                                            break;
-                                        case "category":
-                                            if (!book.getCategory().toLowerCase().contains(value)) 
-                                                meetsAllCriteria = false;
-                                            break;
-                                        case "email":
-                                            if (!book.getEmail().toLowerCase().contains(value)) 
-                                                meetsAllCriteria = false;
-                                            break;
-                                    }
-                                } else if (item instanceof CD) {
-                                    CD cd = (CD) item;
-                                    switch (key) {
-                                        case "company":
-                                            if (!cd.getCompany().toLowerCase().contains(value)) 
-                                                meetsAllCriteria = false;
-                                            break;
-                                        case "duration":
-                                            try {
-                                                if (cd.getDuration() != Integer.parseInt(value)) 
-                                                    meetsAllCriteria = false;
-                                            } catch (NumberFormatException e) {
-                                                meetsAllCriteria = false;
-                                            }
-                                            break;
-                                        case "price":
-                                            try {
-                                                if (cd.getPrice() != Double.parseDouble(value)) 
-                                                    meetsAllCriteria = false;
-                                            } catch (NumberFormatException e) {
-                                                meetsAllCriteria = false;
-                                            }
-                                            break;
-                                    }
-                                }
+                    if (item instanceof Book) {
+                        Book book = (Book) item;
+                        if (author != null && !author.isEmpty() && !book.getAuthor().equalsIgnoreCase(author)) 
+                            meetsAllCriteria = false;
+                        if (category != null && !category.isEmpty() && !book.getCategory().equalsIgnoreCase(category)) 
+                            meetsAllCriteria = false;
+                        if (email != null && !email.isEmpty() && !book.getEmail().equalsIgnoreCase(email)) 
+                            meetsAllCriteria = false;
+                    } else if (item instanceof CD) {
+                        CD cd = (CD) item;
+                        if (company != null && !company.isEmpty() && !cd.getCompany().equalsIgnoreCase(company)) 
+                            meetsAllCriteria = false;
+                        if (duration != null && !duration.isEmpty()) {
+                            try {
+                                if (cd.getDuration() != Integer.parseInt(duration)) 
+                                    meetsAllCriteria = false;
+                            } catch (NumberFormatException e) {
+                                meetsAllCriteria = false;
+                            }
+                        }
+                        if (price != null && !price.isEmpty()) {
+                            try {
+                                if (cd.getPrice() != Double.parseDouble(price)) 
+                                    meetsAllCriteria = false;
+                            } catch (NumberFormatException e) {
+                                meetsAllCriteria = false;
                             }
                         }
                     }
@@ -440,7 +356,7 @@ public class Library {
 
         if (matchingItems.isEmpty()) {
             return "No items found matching the return criteria";
-        } else if (matchingItems.size() > 1 && (additionalCriteria == null || additionalCriteria.isEmpty())) {
+        } else if (matchingItems.size() > 1 && (author == null && category == null && email == null && company == null && duration == null && price == null)) {
             StringBuilder result = new StringBuilder("Multiple matching items found:\n");
             for (Item item : matchingItems) {
                 result.append(item.displayInfo()).append("\n");
@@ -497,23 +413,6 @@ public class Library {
         return new ArrayList<>(items);
     }
 
-    /**
-     * Searches for and returns a list of items matching the specified criteria
-     * 
-     * @param title The title to search for (case-insensitive partial match)
-     * @param itemType The type of item ("Book" or "CD")
-     * @param additionalCriteria Map of additional search criteria:
-     *        For Books:
-     *        - "category": matches book category
-     *        - "author": matches book author
-     *        - "email": matches author email
-     *        For CDs:
-     *        - "company": matches CD company
-     *        - "duration": matches CD duration (exact match)
-     *        - "price": matches CD price (exact match)
-     * @return List<Item> A list of all items matching the search criteria
-     *         Returns empty list if no matches found
-     */
     public ArrayList<Item> findItems(String title, String itemType, Map<String, String> additionalCriteria) {
         ArrayList<Item> foundItems = new ArrayList<>();
         for (Item item : items) {

@@ -4,7 +4,7 @@ import java.awt.*;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.stream.Collectors;
+
 
 public class LibraryGUI extends JFrame {
     private Library library;
@@ -131,60 +131,56 @@ public class LibraryGUI extends JFrame {
     }
 
     private void appendItemDetails(Item item) {
-        DefaultTableModel model;
-        if (item instanceof Book) {
-            // Create table model for books if it doesn't exist
-            if (!(resultTable.getModel() instanceof DefaultTableModel) || 
-                resultTable.getModel().getColumnCount() != 6) {
-                model = new DefaultTableModel(new String[]{
-                    "Type", "Title", "Category", "Author", "Email", "Stock"
-                }, 0);
-                resultTable.setModel(model);
-            } else {
-                model = (DefaultTableModel) resultTable.getModel();
-            }
-            
-            Book book = (Book) item;
+        DefaultTableModel model = (DefaultTableModel) resultTable.getModel();
+        
+        if (item instanceof Book book) {
             model.addRow(new Object[]{
                 "Book",
                 book.getTitle(),
                 book.getCategory(),
                 book.getAuthor(),
                 book.getEmail(),
-                book.getQuantity() + "/" + book.getMaxQuantity()
+                String.format("%d/%d", book.getQuantity(), book.getMaxQuantity())
             });
-        } else if (item instanceof CD) {
-            // Create table model for CDs if it doesn't exist
-            if (!(resultTable.getModel() instanceof DefaultTableModel) || 
-                resultTable.getModel().getColumnCount() != 6) {
-                model = new DefaultTableModel(new String[]{
-                    "Type", "Title", "Company", "Duration", "Price", "Stock"
-                }, 0);
-                resultTable.setModel(model);
-            } else {
-                model = (DefaultTableModel) resultTable.getModel();
-            }
-            
-            CD cd = (CD) item;
+        } else if (item instanceof CD cd) {
             model.addRow(new Object[]{
                 "CD",
                 cd.getTitle(),
                 cd.getCompany(),
                 cd.getDuration() + " min",
                 String.format("$%.2f", cd.getPrice()),
-                cd.getQuantity() + "/" + cd.getMaxQuantity()
+                String.format("%d/%d", cd.getQuantity(), cd.getMaxQuantity())
             });
         }
     }
 
-    private void createResultTable() {
-        String[] columnNames = {"Type", "Title", "Category/Company", "Author/Duration", "Email/Price", "Quantity", "Max Quantity"};
-        resultTable = new JTable(new DefaultTableModel(columnNames, 0));
-        resultTable.setFillsViewportHeight(true);
-        resultTable.setAutoResizeMode(JTable.AUTO_RESIZE_ALL_COLUMNS);
-        tableScrollPane = new JScrollPane(resultTable);
-        tableScrollPane.setPreferredSize(new Dimension(750, 300));
+private void createResultTable() {
+    String[] columnNames = {"Type", "Title", "Category/Company", "Author/Duration", "Email/Price", "Stock"};
+    
+    DefaultTableModel model = new DefaultTableModel(columnNames, 0) {
+        @Override
+        public boolean isCellEditable(int row, int column) {
+            return false; // Make table read-only
+        }
+    };
+
+    resultTable = new JTable(model);
+    resultTable.setFillsViewportHeight(true);
+    resultTable.setAutoResizeMode(JTable.AUTO_RESIZE_ALL_COLUMNS);
+
+    // 🚀 FULLY DISABLE EDITING
+    resultTable.setDefaultEditor(Object.class, null); // <--- Add this!
+
+    // Set column widths
+    int[] columnWidths = {60, 150, 100, 100, 100, 80};
+    for (int i = 0; i < columnWidths.length; i++) {
+        resultTable.getColumnModel().getColumn(i).setPreferredWidth(columnWidths[i]);
     }
+
+    tableScrollPane = new JScrollPane(resultTable);
+    tableScrollPane.setPreferredSize(new Dimension(600, 300));
+}
+
 
 
     private void handleButtonClick(String command) {
@@ -396,166 +392,144 @@ public class LibraryGUI extends JFrame {
     }
 
     private void removeItem() {
-        String title = titleField.getText();
-        String itemType = (String) itemTypeCombo.getSelectedItem();
+        String title = titleField.getText().trim();
+        if (title.isEmpty()) {
+            JOptionPane.showMessageDialog(this, "Title field cannot be empty", "Validation Error", JOptionPane.ERROR_MESSAGE);
+            titleField.requestFocus();
+            return;
+        }
+
+        String itemType = itemTypeCombo.getSelectedItem().toString();
         
-        // Create map for additional search criteria
-        Map<String, String> additionalCriteria = new HashMap<>();
+        String author = null;
+        String category = null;
+        String email = null;
+        String company = null;
+        String duration = null;
+        String price = null;
         
         if (itemType.equals("Book")) {
-            if (!categoryField.getText().trim().isEmpty()) {
-                additionalCriteria.put("category", categoryField.getText().trim());
-            }
-            if (!authorField.getText().trim().isEmpty()) {
-                additionalCriteria.put("author", authorField.getText().trim());
-            }
-            if (!emailField.getText().trim().isEmpty()) {
-                additionalCriteria.put("email", emailField.getText().trim());
-            }
+            category = categoryField.getText().trim();
+            author = authorField.getText().trim();
+            email = emailField.getText().trim();
         } else { // CD
-            if (!categoryField.getText().trim().isEmpty()) {
-                additionalCriteria.put("company", categoryField.getText().trim());
-            }
-            if (!authorField.getText().trim().isEmpty()) {
-                additionalCriteria.put("duration", authorField.getText().trim());
-            }
-            if (!emailField.getText().trim().isEmpty()) {
-                additionalCriteria.put("price", emailField.getText().trim());
-            }
+            company = categoryField.getText().trim();
+            duration = authorField.getText().trim();
+            price = emailField.getText().trim();
         }
         
         displayArea.setText(""); // Clear previous content
-        String result = library.removeItem(title, itemType, additionalCriteria);
+        String result = library.removeItem(title, itemType, author, category, email, company, duration, price);
         displayArea.append(result);
     }
 
     private void findItem() {
-        String title = titleField.getText();
-        String itemType = (String) itemTypeCombo.getSelectedItem();
+        String title = titleField.getText().trim();
+        if (title.isEmpty()) {
+            JOptionPane.showMessageDialog(this, "Title field cannot be empty", "Validation Error", JOptionPane.ERROR_MESSAGE);
+            titleField.requestFocus();
+            return;
+        }
+
+        String itemType = itemTypeCombo.getSelectedItem().toString();
         
-        Map<String, String> additionalCriteria = new HashMap<>();
+        String author = null;
+        String category = null;
+        String email = null;
+        String company = null;
+        String duration = null;
+        String price = null;
         
         if (itemType.equals("Book")) {
-            if (!categoryField.getText().trim().isEmpty()) {
-                additionalCriteria.put("category", categoryField.getText().trim());
-            }
-            if (!authorField.getText().trim().isEmpty()) {
-                additionalCriteria.put("author", authorField.getText().trim());
-            }
-            if (!emailField.getText().trim().isEmpty()) {
-                additionalCriteria.put("email", emailField.getText().trim());
-            }
-        } else {
-            if (!categoryField.getText().trim().isEmpty()) {
-                additionalCriteria.put("company", categoryField.getText().trim());
-            }
-            if (!authorField.getText().trim().isEmpty()) {
-                additionalCriteria.put("duration", authorField.getText().trim());
-            }
-            if (!emailField.getText().trim().isEmpty()) {
-                additionalCriteria.put("price", emailField.getText().trim());
-            }
+            category = categoryField.getText().trim();
+            author = authorField.getText().trim();
+            email = emailField.getText().trim();
+        } else { // CD
+            company = categoryField.getText().trim();
+            duration = authorField.getText().trim();
+            price = emailField.getText().trim();
         }
         
-        ArrayList<Item> foundItems = library.findItems(title, itemType, additionalCriteria);
-        
-        // Clear previous content
-        DefaultTableModel model = new DefaultTableModel();
-        resultTable.setModel(model);
-        
+        displayArea.setText(""); // Clear previous content
+        String result = library.findItem(title, itemType, author, category, email, company, duration, price);
+        displayArea.append(result);
+
+        // Clear previous table content
+        DefaultTableModel model = (DefaultTableModel) resultTable.getModel();
+        model.setRowCount(0);
+
+        // Populate table with found items
+        ArrayList<Item> foundItems = library.findItems(title, itemType, new HashMap<>());
         if (foundItems.isEmpty()) {
-            JOptionPane.showMessageDialog(this, "No items found matching the search criteria", 
-                                        "Search Result", JOptionPane.INFORMATION_MESSAGE);
+            JOptionPane.showMessageDialog(this, "No items found matching the search criteria", "Search Result", JOptionPane.INFORMATION_MESSAGE);
         } else {
-            // Set appropriate columns based on item type
-            if (itemType.equals("Book")) {
-                model = new DefaultTableModel(new String[]{
-                    "Type", "Title", "Category", "Author", "Email", "Stock"
-                }, 0);
-            } else {
-                model = new DefaultTableModel(new String[]{
-                    "Type", "Title", "Company", "Duration", "Price", "Stock"
-                }, 0);
-            }
-            resultTable.setModel(model);
-            
             for (Item item : foundItems) {
                 appendItemDetails(item);
-            }
-            
-            // Adjust column widths
-            for (int i = 0; i < resultTable.getColumnCount(); i++) {
-                TableColumn column = resultTable.getColumnModel().getColumn(i);
-                column.setPreferredWidth(100);
             }
         }
     }
 
     private void borrowItem() {
-        String title = titleField.getText();
-        String itemType = (String) itemTypeCombo.getSelectedItem();
+        String title = titleField.getText().trim();
+        if (title.isEmpty()) {
+            JOptionPane.showMessageDialog(this, "Title field cannot be empty", "Validation Error", JOptionPane.ERROR_MESSAGE);
+            titleField.requestFocus();
+            return;
+        }
+
+        String itemType = itemTypeCombo.getSelectedItem().toString();
         
-        // Create map for additional search criteria
-        Map<String, String> additionalCriteria = new HashMap<>();
+        String author = null;
+        String category = null;
+        String email = null;
+        String company = null;
+        String duration = null;
+        String price = null;
         
         if (itemType.equals("Book")) {
-            if (!categoryField.getText().trim().isEmpty()) {
-                additionalCriteria.put("category", categoryField.getText().trim());
-            }
-            if (!authorField.getText().trim().isEmpty()) {
-                additionalCriteria.put("author", authorField.getText().trim());
-            }
-            if (!emailField.getText().trim().isEmpty()) {
-                additionalCriteria.put("email", emailField.getText().trim());
-            }
+            category = categoryField.getText().trim();
+            author = authorField.getText().trim();
+            email = emailField.getText().trim();
         } else { // CD
-            if (!categoryField.getText().trim().isEmpty()) {
-                additionalCriteria.put("company", categoryField.getText().trim());
-            }
-            if (!authorField.getText().trim().isEmpty()) {
-                additionalCriteria.put("duration", authorField.getText().trim());
-            }
-            if (!emailField.getText().trim().isEmpty()) {
-                additionalCriteria.put("price", emailField.getText().trim());
-            }
+            company = categoryField.getText().trim();
+            duration = authorField.getText().trim();
+            price = emailField.getText().trim();
         }
         
         displayArea.setText(""); // Clear previous content
-        String result = library.borrowItem(title, itemType, additionalCriteria);
+        String result = library.borrowItem(title, itemType, author, category, email, company, duration, price);
         displayArea.append(result);
     }
 
     private void returnItem() {
-        String title = titleField.getText();
-        String itemType = (String) itemTypeCombo.getSelectedItem();
+        String title = titleField.getText().trim();
+        if (title.isEmpty()) {
+            JOptionPane.showMessageDialog(this, "Title field cannot be empty", "Validation Error", JOptionPane.ERROR_MESSAGE);
+            titleField.requestFocus();
+            return;
+        }
+
+        String itemType = itemTypeCombo.getSelectedItem().toString();
         
-        // Create map for additional search criteria
-        Map<String, String> additionalCriteria = new HashMap<>();
+        String author = null;
+        String category = null;
+        String email = null;
+        String company = null;
+        String duration = null;
+        String price = null;
         
         if (itemType.equals("Book")) {
-            if (!categoryField.getText().trim().isEmpty()) {
-                additionalCriteria.put("category", categoryField.getText().trim());
-            }
-            if (!authorField.getText().trim().isEmpty()) {
-                additionalCriteria.put("author", authorField.getText().trim());
-            }
-            if (!emailField.getText().trim().isEmpty()) {
-                additionalCriteria.put("email", emailField.getText().trim());
-            }
+            category = categoryField.getText().trim();
+            author = authorField.getText().trim();
+            email = emailField.getText().trim();
         } else { // CD
-            if (!categoryField.getText().trim().isEmpty()) {
-                additionalCriteria.put("company", categoryField.getText().trim());
-            }
-            if (!authorField.getText().trim().isEmpty()) {
-                additionalCriteria.put("duration", authorField.getText().trim());
-            }
-            if (!emailField.getText().trim().isEmpty()) {
-                additionalCriteria.put("price", emailField.getText().trim());
-            }
+            company = categoryField.getText().trim();
+            duration = authorField.getText().trim();
+            price = emailField.getText().trim();
         }
         
         displayArea.setText(""); // Clear previous content
-        String result = library.returnItem(title, itemType, additionalCriteria);
+        String result = library.returnItem(title, itemType, author, category, email, company, duration, price);
         displayArea.append(result);
     }
 
@@ -568,13 +542,16 @@ public class LibraryGUI extends JFrame {
         }
 
         // Separate books and CDs
-        ArrayList<Item> books = items.stream()
-            .filter(item -> item instanceof Book)
-            .collect(Collectors.toCollection(ArrayList::new));
-            
-        ArrayList<Item> cds = items.stream()
-            .filter(item -> item instanceof CD)
-            .collect(Collectors.toCollection(ArrayList::new));
+        ArrayList<Item> books = new ArrayList<>();
+        ArrayList<Item> cds = new ArrayList<>();
+        
+        for (Item item : items) {
+            if (item instanceof Book) {
+                books.add(item);
+            } else if (item instanceof CD) {
+                cds.add(item);
+            }
+        }
 
         // Clear previous content
         DefaultTableModel model = new DefaultTableModel();
@@ -620,9 +597,9 @@ public class LibraryGUI extends JFrame {
     }
 
     public static void main(String[] args) {
-        SwingUtilities.invokeLater(() -> {
+       
             LibraryGUI gui = new LibraryGUI();
             gui.setVisible(true);
-        });
+    
     }
 }

@@ -48,6 +48,7 @@ public class CD extends Item {
             company,
             duration,
             price,
-            quantity, maxQuantity);
+            quantity,
+            maxQuantity);
     }
 }
